@@ -1,0 +1,154 @@
+---
+title: "Data analysis and statistical inference project"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+---
+```{r, echo=FALSE}
+options(warn=-1)
+```
+
+# Introduction
+The welfare budget has been shrinking very rapidly in the last years in several countries. This budget reviews may be particuarly important to reduce the deficit and the taxes for the citizens but at the same time can effect significally the life of millions of people. At this point it may be vital to understand the effects that this cuts can produce in the next future to the economy.
+
+In the following document we try to understand if exists a correlation between the family income of a person when 16 years old (and thus his/her social class of origin ) and his/her possibility of finding a equally good job at the moment.
+
+This question may be significant to understand whether and how the social class of origin influence the "market value" of the future citizen of a country.
+
+# The data
+For this document we are going to use data[1][2] collected by surveying random US citizen. More specifically the data we are going to use are part of the the General Social Survey (GSS) [3] conducted by the University of Chicago. 
+
+The information are collected mainly through stratified sampling [4]. The biggest source of bias of the data is the non-respondent part of the people interviewed. This is correctly addressed by the GSS [4]. In my opinion the population is sampled correctly and as such the result of this study can be generalized to the US population.
+
+More precisely the data are composed of 57061 rows (or "cases") and 115 columns (or "variables"). Each row represent the answers of a sampled citizen and every column represent the answers of all citizens to a specific question. A cell is obviously the answer of a citizen to a specific question. The full data will be identified by the R variable "gss" during our analysis.
+
+```{r, echo=FALSE}
+load(url("http://bit.ly/dasi_gss_data"))
+```
+The two variables of the data that we are going go analyze to draw our conclusions are "incom16" and "jobfind". "incom16" represents the family income of a person and is a categorical and ordinal variable. "jobfind" represents the chances of finding an equally good job for a person and is cateogircal and ordinal.
+
+The data come from a social survery of demographic and attitudes and not from a controlled experiment so we can claim that these are observational data. 
+
+Since the data are randomly collected we can generalize the results of our analysis but the the data aro also observational so they cannot prove any causation but only correlation. Anyway it's important to note that since that 1 variable (incom16) that cannot be influenced by the other one due to a obvious chronological constraint. Maybe we can infer some causation.
+
+This is an observational study. It observational by its very nature since it's just a survey of demographic and attitudes.
+
+A snippet of the data:
+```{r, message="a snippet of the data"}
+data <- subset(gss, !is.na(incom16) & !is.na(jobfind), c(incom16, jobfind))
+head(data, 10)
+```
+
+## data cleaning
+For this study we are going to exclude all the cases where one of the two variable is null. The cases we are going to analyze are reduced to `r nrow(data) `.
+
+
+# Exploratory data analysis
+
+## Some information about the variable incom16:
+
+
+```{r, message="incom16 levels"}
+levels(data$incom16)
+```
+
+```{r, echo=TRUE, message="incom16 visual representation"}
+summary(data$incom16)
+```
+
+```{r, echo=FALSE, message="incom16 visual representation"}
+plot(data$incom16)
+```
+
+I would say the incom16 data follow a (slightly) skew normal distribution [5]
+
+## Some information about the variable jobfind:
+
+The levels of the jobfind variable:
+```{r, message="jobfind levels"}
+levels(data$jobfind)
+``` 
+
+```{r, echo=TRUE, message="a summary of jobfind"}
+summary(data$jobfind)
+```
+
+```{r, message="jobfind visual representation"}
+plot(data$jobfind)
+```
+
+distribution: It looks like more people find Not Easy the job finding compared to the people who find it Very Easy. The Somewhat Easy people fall just between.
+
+## A summary
+```{r, echo=FALSE, message="Summary of the data"}
+cor <- table(data$incom16, data$jobfind, dnn=c("incom16", "jobfind"))
+cor <- cor[rowSums(cor != 0) > 0,]
+show(cor)
+```
+
+```{r, echo=FALSE, message="A visual representation of the correlation of the data"}
+mosaicplot(cor)
+```
+
+It looks like the more was the income when 16, the easier finding a new equally good job appears now.
+
+#Inference
+Our null hypotesis states that there is no correlation between the income when 16 years old and the chances of finding a job (the 2 variables are indipendent). Our alternate hypotes states there instead there is a correlation, either positive or negative.
+
+To perform an hypotesis testing we are going to use the chi-square test of indipendence. The chi-square test if particurly fit for testing the indipendence of categorical variables from each other, as we need to do.
+
+The first step is to check the conditions to see if we can really use it.
+
+A summary of the data for the chi-square test:
+```{r, echo=FALSE, message="Summary of the data"}
+show(cor)
+```
+
+The conditions are:
+
++    random sampling => our data have been randomly sampled
+
++    n < 10% of our population => since n is 57061 and our population (us citizen) is over 300 milions it's ok
+
++    one answer per cell => since every person gives only one answer per question, it can contribute only to one cell
+
+Our significance level is set to 0.05 for the hypotesis test.
+
+## The test
+
+We perform our chi-square test:
+```{r, echo=TRUE, message="chi square test"}
+res <- chisq.test(cor)
+show(res)
+```
+
+The pvalue `r res$p.value` is extremely low, much lower than our significance level. We can claim to be pretty sure that there is a correlation between the 2 variables we analyzed.
+
+# Conclusions
+We shown that there exists a strong correlation between the social status of origin and the chances of finding an equally good job. The correlation appears to be positive, and even if the cause of the correlation is not clear, it appears that who comes from a "wealthy" family has a better chance of been an appreciated worker with a high market value. This kind of "Matthew effect" [6] maybe should be incentivated by the welfare policies in the next years.
+
+Other future research can try to understand better the relationship between these 2 variables to better understand why this effect happens.
+
+
+# Bibliography
+
+[1] http://bit.ly/dasi_gss_data
+
+[2] https://d396qusza40orc.cloudfront.net/statistics%2Fproject%2Fgss1.html
+
+[3] http://www.norc.org/Research/Projects/Pages/general-social-survey.aspx
+
+[4] http://publicdata.norc.org:41000/gss/documents//BOOK/GSS_Codebook_AppendixA.pdf
+
+[5] http://en.wikipedia.org/wiki/Skew_normal_distribution
+
+[6] http://en.wikipedia.org/wiki/Matthew_effect
+
+## Appendix
+
+Some of the data:
+```{r, message="a snippet of the data"}
+head(data, 100)
+```
+
